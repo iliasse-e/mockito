@@ -88,7 +88,6 @@ public class UserProcessor {
         return "saved:" + cleaned;
     }
 }
-
 ```
 
 #### Test avec spy (et pourquoi un stub ne peut pas faire ça)
@@ -166,3 +165,83 @@ class MyTest {
     }
 }
 ```
+
+## ArgumentCaptor
+
+C’est un objet fourni par Mockito qui permet de capturer les arguments réellement passés à une méthode d’un mock, afin de les inspecter dans ton test.
+
+En clair :
+
+  Quand ton code appelle une méthode d’un mock, l’ArgumentCaptor te permet de récupérer les valeurs exactes qui ont été envoyées.
+
+C’est comme un “enregistreur” d’arguments.
+
+### Pourquoi en a‑t‑on besoin ?
+
+Parce que parfois, tu veux tester ce que ton code envoie à une dépendance.
+
+Exemples typiques :
+
+vérifier qu’un service envoie le bon DTO à un repository
+
+vérifier qu’un mapper produit la bonne valeur
+
+vérifier qu’un service nettoie ou transforme une donnée avant de l’envoyer
+
+vérifier qu’un ID généré est bien passé à la méthode suivante
+
+vérifier qu’un objet complexe contient les bonnes valeurs
+
+*Dans ces cas-là, un simple verify(mock).save("Alice") ne suffit pas (surtout si l’argument est dynamique, construit dans la méthode, modifié avant l’appel)*
+
+```java
+ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+
+service.createUser("Charlie");
+
+verify(mockRepo).save(captor.capture());
+
+assertEquals("Charlie", captor.getValue());
+```
+
+Ici :
+
+``capture()`` intercepte l’argument passé à ``save()``
+
+``getValue()`` te donne la valeur capturée
+
+L’ArgumentCaptor est donc un outil d’inspection, pas un outil de simulation.
+
+### Quand utiliser ArgumentCaptor ?
+
+Utilise-le quand tu veux vérifier :
+
+un argument calculé dans la méthode testée
+
+un argument transformé (trim, lowercase, mapping…)
+
+un argument complexe (DTO, entity, map…)
+
+un argument généré (UUID, timestamp…)
+
+un argument intermédiaire dans un workflow
+
+### Différence avec un spy
+
+L’ArgumentCaptor sert à observer ce que ton code envoie à un mock.
+
+Il ne modifie rien.
+Il ne simule rien.
+Il ne remplace rien.
+
+Un spy sert à tester la vraie logique d’un objet, tout en permettant de surcharger certaines méthodes.
+
+Un spy :
+
+exécute les vraies méthodes par défaut
+
+peut être partiellement mocké
+
+permet de vérifier les appels internes
+
+permet de contrôler une partie du comportement

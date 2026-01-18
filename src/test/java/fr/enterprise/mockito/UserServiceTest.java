@@ -31,7 +31,7 @@ class UserServiceTest {
         assertEquals("ALICE", result);
 
         // Vérifie que la méthode a été appellée
-        verify(mockRepo).findNameById(1L); // MOCK verification
+        verify(mockRepo).findNameById(1L);
     }
 
     @Test
@@ -60,6 +60,7 @@ class UserServiceTest {
 
     @Test
     void testSpy() {
+        // C'est un test qui n'a rien à voir avec le fichier UserService
         List<String> realList = new ArrayList<>();
         List<String> spyList = spy(realList);
 
@@ -84,6 +85,7 @@ class UserServiceTest {
 
     @Test
     void testArgumentCaptor() {
+        // On veut tester que l'argument qu'on donne à la méthode .createUser() est aussi donnée à la méthode .save()
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
         service.createUser("Charlie");
