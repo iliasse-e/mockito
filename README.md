@@ -245,3 +245,118 @@ peut être partiellement mocké
 permet de vérifier les appels internes
 
 permet de contrôler une partie du comportement
+
+## Mockito & Spring
+
+Dans un projet Spring, tes classes sont souvent des beans gérés par le conteneur (services, repositories, controllers…).
+Quand tu veux tester un bean, tu veux généralement :
+
+isoler la classe testée
+
+remplacer ses dépendances par des mocks
+
+éviter de charger tout le contexte Spring (lent et inutile pour un test unitaire)
+
+C’est exactement ce que Mockito permet de faire, et Spring fournit même des annotations dédiées pour faciliter l’intégration.
+
+### Les 3 façons d’utiliser Mockito avec Spring
+
+#### Tests unitaires purs (sans Spring)
+
+C’est la méthode la plus rapide et la plus propre pour tester un service Spring.
+
+Tu utilises :
+
+``@ExtendWith(MockitoExtension.class)``
+
+``@Mock``
+
+``@InjectMocks``
+
+👉 Aucun contexte Spring n’est chargé.
+👉 Parfait pour tester la logique métier.
+
+```java
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @Mock
+    private UserRepository repo;
+
+    @InjectMocks
+    private UserService service;
+
+    @Test
+    void testGetUser() {
+        when(repo.findNameById(1L)).thenReturn("Alice");
+
+        String result = service.getUserName(1L);
+
+        assertEquals("ALICE", result);
+    }
+}
+```
+
+#### Tests Spring Boot avec @MockBean
+
+Quand tu veux tester un bean Spring dans un contexte Spring, mais en remplaçant certaines dépendances par des mocks, tu utilises :
+
+``@SpringBootTest``
+
+``@MockBean``
+
+👉 Spring crée le contexte
+👉 Mockito remplace certains beans par des mocks
+👉 Tu testes un vrai bean Spring, mais isolé
+
+```java
+@SpringBootTest
+class UserServiceSpringTest {
+
+    @MockBean
+    private UserRepository repo;
+
+    @Autowired
+    private UserService service;
+
+    @Test
+    void testGetUser() {
+        when(repo.findNameById(1L)).thenReturn("Bob");
+
+        String result = service.getUserName(1L);
+
+        assertEquals("BOB", result);
+    }
+}
+```
+
+#### Tests de contrôleurs avec @WebMvcTest
+Pour tester un controller Spring MVC sans charger tout le contexte, tu utilises :
+
+``@WebMvcTest``
+
+``@MockBean`` pour les services
+
+👉 Très rapide
+👉 Parfait pour tester les endpoints REST
+
+```java
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private UserService service;
+
+    @Test
+    void testGetUser() throws Exception {
+        when(service.getUserName(1L)).thenReturn("ALICE");
+
+        mockMvc.perform(get("/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("ALICE"));
+    }
+}
+```
